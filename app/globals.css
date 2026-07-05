@@ -1,26 +1,165 @@
 @import "tailwindcss";
 
+/* Fishbowl palette — a sunlit aquarium, not a dark kiosk.
+   Keep in sync with lib/frames.ts. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --water: #0e3e4a; /* deep bowl teal — ink */
+  --kelp: #157a8c; /* mid teal */
+  --pool: #bfe8e4; /* aquarium-glass aqua — main bg */
+  --foam: #f6fbfa; /* near-white foam — cards, photo borders */
+  --gold: #ff7a2f; /* goldfish orange — primary action */
+  --fin: #ffb25e; /* light fin orange */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-water: var(--water);
+  --color-kelp: var(--kelp);
+  --color-pool: var(--pool);
+  --color-foam: var(--foam);
+  --color-gold: var(--gold);
+  --color-fin: var(--fin);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
+  overflow: hidden; /* kiosk: no scrolling chrome */
+  overscroll-behavior: none;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--pool);
+  color: var(--water);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Visible focus for keyboard nav, in brand ink */
+:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ---- view transitions (Main ↔ Selection ↔ Capture share one grammar) ---- */
+@keyframes view-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.view-in {
+  animation: view-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.step-in {
+  animation: step-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ---- signature: the countdown bubble ---- */
+@keyframes bubble-swell {
+  0% {
+    transform: scale(0.82);
+  }
+  70% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.bubble-swell {
+  animation: bubble-swell 950ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+@keyframes flash-pop {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.flash-pop {
+  animation: flash-pop 550ms ease-out both;
+}
+
+/* ---- attract screen: rising ambient bubbles ---- */
+@keyframes rise {
+  0% {
+    transform: translateY(105vh) translateX(0) scale(var(--s, 1));
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.65;
+  }
+  50% {
+    transform: translateY(50vh) translateX(var(--drift, 14px)) scale(var(--s, 1));
+  }
+  100% {
+    transform: translateY(-16vh) translateX(0) scale(var(--s, 1));
+    opacity: 0;
+  }
+}
+.bubble-rise {
+  animation: rise var(--dur, 12s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.bob {
+  animation: bob 3.2s ease-in-out infinite;
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.pulse-soft {
+  animation: pulse-soft 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-in,
+  .step-in,
+  .bubble-swell,
+  .bubble-rise,
+  .bob,
+  .pulse-soft {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
 }
