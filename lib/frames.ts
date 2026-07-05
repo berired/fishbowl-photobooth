@@ -23,6 +23,8 @@ export type Frame = {
   width: number;
   height: number;
   slots: Slot[];
+  /** Finished-design sample shown on the frame picker (public/ path). */
+  sample?: string;
   drawBackground: (ctx: CanvasRenderingContext2D) => void;
   drawForeground?: (ctx: CanvasRenderingContext2D, displayFont: string) => void;
 };
@@ -187,12 +189,13 @@ const keychainSlots: Slot[] = [{ x: 170, y: 210, w: 560, h: 560, circle: true }]
 export const FRAMES: Frame[] = [
   // ---- 4-square (3 designs) ----
   {
-    id: "sq-reef",
-    name: "Reef",
+    id: "sq-sea-u-later",
+    name: "Sea U Later",
     bubbleType: "4-square",
     width: SQ.w,
     height: SQ.h,
     slots: squareSlots,
+    sample: "/assets/Samples/4 Bubbles - Sea U Later.png",
     drawBackground(ctx) {
       ctx.fillStyle = POOL;
       ctx.fillRect(0, 0, SQ.w, SQ.h);
@@ -211,12 +214,13 @@ export const FRAMES: Frame[] = [
     },
   },
   {
-    id: "sq-deepsea",
-    name: "Deep Sea",
+    id: "sq-nemo",
+    name: "Nemo",
     bubbleType: "4-square",
     width: SQ.w,
     height: SQ.h,
     slots: squareSlots,
+    sample: "/assets/Samples/4 Bubbles - Nemo.png",
     drawBackground(ctx) {
       const g = ctx.createLinearGradient(0, 0, 0, SQ.h);
       g.addColorStop(0, "#12505F");
@@ -237,12 +241,13 @@ export const FRAMES: Frame[] = [
     },
   },
   {
-    id: "sq-sunlit",
-    name: "Sunlit",
+    id: "sq-fih",
+    name: "Fih.",
     bubbleType: "4-square",
     width: SQ.w,
     height: SQ.h,
     slots: squareSlots,
+    sample: "/assets/Samples/4 Bubbles - Fih..png",
     drawBackground(ctx) {
       ctx.fillStyle = FOAM;
       ctx.fillRect(0, 0, SQ.w, SQ.h);
@@ -261,12 +266,13 @@ export const FRAMES: Frame[] = [
 
   // ---- 3-strip (3 designs) ----
   {
-    id: "st-foam",
-    name: "Classic Foam",
+    id: "st-fih",
+    name: "Fih.",
     bubbleType: "3-strip",
     width: ST.w,
     height: ST.h,
     slots: stripSlots,
+    sample: "/assets/Samples/3 Bubbles - Fih..png",
     drawBackground(ctx) {
       ctx.fillStyle = FOAM;
       ctx.fillRect(0, 0, ST.w, ST.h);
@@ -285,12 +291,13 @@ export const FRAMES: Frame[] = [
     },
   },
   {
-    id: "st-ocean-ink",
-    name: "Ocean Ink",
+    id: "st-nemo",
+    name: "Nemo",
     bubbleType: "3-strip",
     width: ST.w,
     height: ST.h,
     slots: stripSlots,
+    sample: "/assets/Samples/3 Bubbles - Nemo.png",
     drawBackground(ctx) {
       const g = ctx.createLinearGradient(0, 0, 0, ST.h);
       g.addColorStop(0, "#12505F");
@@ -311,12 +318,13 @@ export const FRAMES: Frame[] = [
     },
   },
   {
-    id: "st-goldfish",
-    name: "Goldfish",
+    id: "st-sea-u-later",
+    name: "Sea U Later",
     bubbleType: "3-strip",
     width: ST.w,
     height: ST.h,
     slots: stripSlots,
+    sample: "/assets/Samples/3 Bubbles - Sea U Later.png",
     drawBackground(ctx) {
       const g = ctx.createLinearGradient(0, 0, 0, ST.h);
       g.addColorStop(0, FIN);

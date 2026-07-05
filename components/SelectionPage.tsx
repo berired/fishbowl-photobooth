@@ -92,10 +92,19 @@ function FrameDesignStep() {
             onClick={() => chooseFrame(f.id)}
             className="group flex flex-col items-center gap-3 rounded-3xl bg-foam p-4 shadow-md shadow-water/10 transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.98]"
           >
-            <FramePreview
-              frame={f}
-              className="max-h-[46vh] w-auto max-w-[38vw] rounded-xl sm:max-w-[240px]"
-            />
+            {f.sample ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={f.sample}
+                alt={`${f.name} frame sample`}
+                className="max-h-[46vh] w-auto max-w-[38vw] rounded-xl object-contain sm:max-w-[240px]"
+              />
+            ) : (
+              <FramePreview
+                frame={f}
+                className="max-h-[46vh] w-auto max-w-[38vw] rounded-xl sm:max-w-[240px]"
+              />
+            )}
             <span
               className="text-lg font-bold group-hover:text-gold"
               style={{ fontFamily: "var(--font-display)" }}
