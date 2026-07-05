@@ -34,7 +34,7 @@ export function GET(req: NextRequest) {
   url.searchParams.set("redirect_uri", redirectUri);
   url.searchParams.set(
     "scope",
-    "asset:write design:content:write design:meta:read folder:write",
+    "asset:read asset:write design:content:write design:meta:read folder:write",
   );
   url.searchParams.set("code_challenge", challenge);
   url.searchParams.set("code_challenge_method", "s256");
