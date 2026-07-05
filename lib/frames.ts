@@ -1,4 +1,4 @@
-// Frame catalog. Each frame is defined as a canvas composition (background +
+﻿// Frame catalog. Each frame is defined as a canvas composition (background +
 // photo slots + foreground) so the on-screen preview and the final composite
 // are drawn by the exact same code. When real PNG overlays exist later, only
 // the draw functions here need to change — capture/compositing stay as-is.
@@ -195,7 +195,7 @@ export const FRAMES: Frame[] = [
     width: SQ.w,
     height: SQ.h,
     slots: squareSlots,
-    sample: "/assets/Samples/4 Bubbles - Sea U Later.png",
+    sample: "/assets/Samples/thumbs/4 Bubbles - Sea U Later.webp",
     drawBackground(ctx) {
       ctx.fillStyle = POOL;
       ctx.fillRect(0, 0, SQ.w, SQ.h);
@@ -220,7 +220,7 @@ export const FRAMES: Frame[] = [
     width: SQ.w,
     height: SQ.h,
     slots: squareSlots,
-    sample: "/assets/Samples/4 Bubbles - Nemo.png",
+    sample: "/assets/Samples/thumbs/4 Bubbles - Nemo.webp",
     drawBackground(ctx) {
       const g = ctx.createLinearGradient(0, 0, 0, SQ.h);
       g.addColorStop(0, "#12505F");
@@ -247,7 +247,7 @@ export const FRAMES: Frame[] = [
     width: SQ.w,
     height: SQ.h,
     slots: squareSlots,
-    sample: "/assets/Samples/4 Bubbles - Fih..png",
+    sample: "/assets/Samples/thumbs/4 Bubbles - Fih..webp",
     drawBackground(ctx) {
       ctx.fillStyle = FOAM;
       ctx.fillRect(0, 0, SQ.w, SQ.h);
@@ -272,7 +272,7 @@ export const FRAMES: Frame[] = [
     width: ST.w,
     height: ST.h,
     slots: stripSlots,
-    sample: "/assets/Samples/3 Bubbles - Fih..png",
+    sample: "/assets/Samples/thumbs/3 Bubbles - Fih..webp",
     drawBackground(ctx) {
       ctx.fillStyle = FOAM;
       ctx.fillRect(0, 0, ST.w, ST.h);
@@ -297,7 +297,7 @@ export const FRAMES: Frame[] = [
     width: ST.w,
     height: ST.h,
     slots: stripSlots,
-    sample: "/assets/Samples/3 Bubbles - Nemo.png",
+    sample: "/assets/Samples/thumbs/3 Bubbles - Nemo.webp",
     drawBackground(ctx) {
       const g = ctx.createLinearGradient(0, 0, 0, ST.h);
       g.addColorStop(0, "#12505F");
@@ -324,7 +324,7 @@ export const FRAMES: Frame[] = [
     width: ST.w,
     height: ST.h,
     slots: stripSlots,
-    sample: "/assets/Samples/3 Bubbles - Sea U Later.png",
+    sample: "/assets/Samples/thumbs/3 Bubbles - Sea U Later.webp",
     drawBackground(ctx) {
       const g = ctx.createLinearGradient(0, 0, 0, ST.h);
       g.addColorStop(0, FIN);
