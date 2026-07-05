@@ -17,6 +17,7 @@ const body = Nunito_Sans({
 export const metadata: Metadata = {
   title: "Fishbowl",
   description: "Fishbowl photobooth kiosk",
+  icons: { icon: "/assets/fishbowl-favicon.png" },
 };
 
 export const viewport: Viewport = {
