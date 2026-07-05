@@ -353,6 +353,7 @@ export const FRAMES: Frame[] = [
     width: KC.w,
     height: KC.h,
     slots: keychainSlots,
+    sample: "/assets/Samples/thumbs/Keychain Sample.webp",
     drawBackground(ctx) {
       ctx.fillStyle = POOL;
       ctx.fillRect(0, 0, KC.w, KC.h);
