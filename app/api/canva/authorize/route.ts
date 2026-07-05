@@ -44,7 +44,8 @@ export function GET(req: NextRequest) {
     httpOnly: true,
     secure: req.nextUrl.protocol === "https:",
     sameSite: "lax" as const,
-    maxAge: 600,
+    // generous window: a first-time Canva sign-in with MFA can take a while
+    maxAge: 1800,
     path: "/",
   };
   res.cookies.set("canva_verifier", verifier, cookieOpts);
