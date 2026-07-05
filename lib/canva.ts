@@ -16,9 +16,14 @@ export type TokenSet = {
   expires_at: number;
 };
 
+/** Tolerate values pasted with surrounding quotes (e.g. into Vercel's env UI). */
+export function env(name: string): string | undefined {
+  return process.env[name]?.trim().replace(/^["']|["']$/g, "") || undefined;
+}
+
 function redis(): Redis {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = env("UPSTASH_REDIS_REST_URL");
+  const token = env("UPSTASH_REDIS_REST_TOKEN");
   if (!url || !token) {
     throw new Error(
       "Upstash Redis is not configured (UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN).",
@@ -28,8 +33,8 @@ function redis(): Redis {
 }
 
 function clientCredentials(): { id: string; basic: string } {
-  const id = process.env.CANVA_CLIENT_ID;
-  const secret = process.env.CANVA_CLIENT_SECRET;
+  const id = env("CANVA_CLIENT_ID");
+  const secret = env("CANVA_CLIENT_SECRET");
   if (!id || !secret) {
     throw new Error("Canva is not configured (CANVA_CLIENT_ID / CANVA_CLIENT_SECRET).");
   }

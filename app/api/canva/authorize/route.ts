@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createHash, randomBytes } from "node:crypto";
-import { CANVA_AUTH_URL } from "@/lib/canva";
+import { CANVA_AUTH_URL, env } from "@/lib/canva";
 
 export const runtime = "nodejs";
 
@@ -13,12 +13,12 @@ function base64url(buf: Buffer): string {
 
 export function GET(req: NextRequest) {
   // Optional gate so a walk-up customer can't trigger a re-auth.
-  const adminKey = process.env.CANVA_ADMIN_KEY;
+  const adminKey = env("CANVA_ADMIN_KEY");
   if (adminKey && req.nextUrl.searchParams.get("key") !== adminKey) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const clientId = process.env.CANVA_CLIENT_ID;
+  const clientId = env("CANVA_CLIENT_ID");
   if (!clientId) {
     return NextResponse.json({ error: "CANVA_CLIENT_ID is not set" }, { status: 500 });
   }
