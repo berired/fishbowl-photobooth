@@ -25,6 +25,12 @@ export type Frame = {
   slots: Slot[];
   /** Finished-design sample shown on the frame picker (public/ path). */
   sample?: string;
+  /**
+   * Real frame artwork (public/ path). When set, the composite draws this
+   * image full-bleed, then places the photos into the slots on top of it —
+   * the canvas draw functions below are ignored.
+   */
+  overlay?: string;
   drawBackground: (ctx: CanvasRenderingContext2D) => void;
   drawForeground?: (ctx: CanvasRenderingContext2D, displayFont: string) => void;
 };
@@ -269,9 +275,16 @@ export const FRAMES: Frame[] = [
     id: "st-fih",
     name: "Fih.",
     bubbleType: "3-strip",
-    width: ST.w,
-    height: ST.h,
-    slots: stripSlots,
+    // Native size of the real frame artwork; slots are the hand-drawn crayon
+    // circles, sized so the photo edge tucks under the ring stroke.
+    width: 703,
+    height: 2000,
+    slots: [
+      { x: 78, y: 116, w: 494, h: 434, circle: true },
+      { x: 82, y: 668, w: 560, h: 424, circle: true },
+      { x: 78, y: 1222, w: 528, h: 442, circle: true },
+    ],
+    overlay: "/assets/Frame PNGs/3 Bubbles - Fih Transparent.png",
     sample: "/assets/Samples/thumbs/3 Bubbles - Fih..webp",
     drawBackground(ctx) {
       ctx.fillStyle = FOAM;

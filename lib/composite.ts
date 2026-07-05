@@ -16,7 +16,8 @@ function displayFontFamily(): string {
 function clipSlot(ctx: CanvasRenderingContext2D, s: Slot) {
   ctx.beginPath();
   if (s.circle) {
-    ctx.arc(s.x + s.w / 2, s.y + s.h / 2, Math.min(s.w, s.h) / 2, 0, Math.PI * 2);
+    // ellipse, so hand-drawn (non-round) circle windows are filled edge to edge
+    ctx.ellipse(s.x + s.w / 2, s.y + s.h / 2, s.w / 2, s.h / 2, 0, 0, Math.PI * 2);
   } else {
     const r = s.r ?? 0;
     ctx.moveTo(s.x + r, s.y);
@@ -73,6 +74,19 @@ export async function renderFrame(
   canvas.height = frame.height;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D context unavailable");
+
+  // Real frame artwork: draw it full-bleed, photos go into the slots on top.
+  if (frame.overlay) {
+    const art = await loadImage(frame.overlay);
+    ctx.drawImage(art, 0, 0, frame.width, frame.height);
+    if (photos) {
+      const imgs = await Promise.all(photos.map(loadImage));
+      frame.slots.forEach((s, i) => {
+        if (imgs[i]) drawCover(ctx, imgs[i], s);
+      });
+    }
+    return;
+  }
 
   const font = displayFontFamily();
   await ensureDisplayFontLoaded(font);
