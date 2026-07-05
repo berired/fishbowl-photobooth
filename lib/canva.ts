@@ -151,6 +151,24 @@ export async function createDesign(assetId: string, title: string): Promise<stri
       asset_id: assetId,
       title,
     }),
-  })) as { design: { urls: { edit_url: string } } };
+  })) as { design: { id: string; urls: { edit_url: string } } };
+
+  // Optionally file the design into a specific Canva folder ("project").
+  // Requires the folder:write scope and CANVA_FOLDER_ID (from the folder's
+  // URL: canva.com/folder/<id>). A failed move never fails the session — the
+  // design still exists in Projects.
+  const folderId = env("CANVA_FOLDER_ID");
+  if (folderId) {
+    try {
+      await canvaFetch("/folders/move", token, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ item_id: data.design.id, to_folder_id: folderId }),
+      });
+    } catch (e) {
+      console.error("Design created but moving it to the folder failed:", e);
+    }
+  }
+
   return data.design.urls.edit_url;
 }
