@@ -24,7 +24,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="h-dvh w-full overflow-hidden bg-pool">
+    <main className="bg-bliss h-dvh w-full overflow-hidden">
       <div key={page} className="view-in h-full w-full">
         {page === "main" && <MainPage />}
         {page === "selection" && <SelectionPage />}

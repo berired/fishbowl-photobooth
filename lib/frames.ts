@@ -1,9 +1,123 @@
-﻿// Frame catalog. Each frame is defined as a canvas composition (background +
+// Frame catalog. Each frame is defined as a canvas composition (background +
 // photo slots + foreground) so the on-screen preview and the final composite
 // are drawn by the exact same code. When real PNG overlays exist later, only
 // the draw functions here need to change — capture/compositing stay as-is.
 
-export type BubbleType = "4-square" | "3-strip" | "1-keychain";
+// ---- packages ----------------------------------------------------------------
+// The customer picks a package (fish) first, then one of its two variants.
+// The variant's strip type decides the frame layout and how many photos get
+// picked (half strip = 3, full strip = 4). Extras (sticker copy, keychain)
+// don't change the capture flow except Lapu-Lapu, which adds a "pick 1 photo
+// for the keychain" step after strip photo selection.
+
+export type StripType = "half" | "full";
+
+export const STRIP_PHOTO_COUNT: Record<StripType, number> = {
+  half: 3,
+  full: 4,
+};
+
+export type PackageVariant = {
+  id: string;
+  label: string;
+  /** What the customer gets, verbatim from the price list. */
+  description: string;
+  stripType: StripType;
+};
+
+/** Representative finished-design sample per strip type (variant cards). */
+export const STRIP_SAMPLE: Record<StripType, string> = {
+  half: "/assets/Samples/thumbs/3 Bubbles - Fih..webp",
+  full: "/assets/Samples/thumbs/4 Bubbles - Fih..webp",
+};
+
+export const KEYCHAIN_SAMPLE = "/assets/ui/keychain-sample.svg";
+
+export type PackageId = "bangus" | "tilapia" | "lapu-lapu";
+
+export type Package = {
+  id: PackageId;
+  name: string;
+  tagline: string;
+  /** Finished-design samples shown on the package card. */
+  samples: string[];
+  /** Lapu-Lapu: adds the keychain photo pick + keychain composite. */
+  keychain: boolean;
+  variants: [PackageVariant, PackageVariant];
+};
+
+export const PACKAGES: Package[] = [
+  {
+    id: "bangus",
+    name: "Bangus",
+    tagline: "2 Photostrip",
+    samples: [
+      "/assets/Samples/thumbs/3 Bubbles - Sea U Later.webp",
+      "/assets/Samples/thumbs/4 Bubbles - Sea U Later.webp",
+    ],
+    keychain: false,
+    variants: [
+      { id: "basic-a", label: "Basic A", description: "2 Half Strips", stripType: "half" },
+      { id: "basic-b", label: "Basic B", description: "2 Full Strips", stripType: "full" },
+    ],
+  },
+  {
+    id: "tilapia",
+    name: "Tilapia",
+    tagline: "1 Photostrip + 1 Sticker",
+    samples: [
+      "/assets/Samples/thumbs/3 Bubbles - Nemo.webp",
+      "/assets/Samples/thumbs/4 Bubbles - Nemo.webp",
+    ],
+    keychain: false,
+    variants: [
+      {
+        id: "sticker-a",
+        label: "Sticker A",
+        description: "1 Half Strip + Sticker Strip",
+        stripType: "half",
+      },
+      {
+        id: "sticker-b",
+        label: "Sticker B",
+        description: "1 Full Strip + 1 Sticker Strip",
+        stripType: "full",
+      },
+    ],
+  },
+  {
+    id: "lapu-lapu",
+    name: "Lapu-Lapu",
+    tagline: "1 Photostrip + 1 Keychain",
+    samples: [
+      "/assets/Samples/thumbs/3 Bubbles - Fih..webp",
+      "/assets/ui/keychain-sample.svg",
+    ],
+    keychain: true,
+    variants: [
+      {
+        id: "keychain-a",
+        label: "Keychain A",
+        description: "1 Half Strip + Bubble Keychain",
+        stripType: "half",
+      },
+      {
+        id: "keychain-b",
+        label: "Keychain B",
+        description: "1 Full Strip + Bubble Keychain",
+        stripType: "full",
+      },
+    ],
+  },
+];
+
+export function packageById(id: PackageId): Package {
+  return PACKAGES.find((p) => p.id === id)!;
+}
+
+// ---- frames -------------------------------------------------------------------
+
+export type FrameLayout = "half-strip" | "full-strip" | "keychain";
 
 export type Slot = {
   x: number;
@@ -19,7 +133,7 @@ export type Slot = {
 export type Frame = {
   id: string;
   name: string;
-  bubbleType: BubbleType;
+  layout: FrameLayout;
   width: number;
   height: number;
   slots: Slot[];
@@ -34,21 +148,6 @@ export type Frame = {
   drawBackground: (ctx: CanvasRenderingContext2D) => void;
   drawForeground?: (ctx: CanvasRenderingContext2D, displayFont: string) => void;
 };
-
-export const BUBBLE_TYPES: {
-  id: BubbleType;
-  label: string;
-  sublabel: string;
-  requiredCount: number;
-}[] = [
-  { id: "4-square", label: "4 Bubbles", sublabel: "Square", requiredCount: 4 },
-  { id: "3-strip", label: "3 Bubbles", sublabel: "Vertical Half Strip", requiredCount: 3 },
-  { id: "1-keychain", label: "1 Bubble", sublabel: "Keychain", requiredCount: 1 },
-];
-
-export function requiredCountFor(type: BubbleType): number {
-  return BUBBLE_TYPES.find((b) => b.id === type)!.requiredCount;
-}
 
 // ---- palette (kept in sync with globals.css) --------------------------------
 
@@ -105,37 +204,6 @@ function bubbles(
   ctx.restore();
 }
 
-/** Horizontal waterline wave across the full width at y. */
-function wave(
-  ctx: CanvasRenderingContext2D,
-  w: number,
-  y: number,
-  amp: number,
-  color: string,
-  fillDown: boolean,
-  totalH: number,
-) {
-  ctx.save();
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.moveTo(0, y);
-  const step = w / 6;
-  for (let i = 0; i < 6; i++) {
-    const x0 = i * step;
-    ctx.quadraticCurveTo(x0 + step / 2, y + (i % 2 === 0 ? amp : -amp), x0 + step, y);
-  }
-  if (fillDown) {
-    ctx.lineTo(w, totalH);
-    ctx.lineTo(0, totalH);
-  } else {
-    ctx.lineTo(w, 0);
-    ctx.lineTo(0, 0);
-  }
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-}
-
 function wordmark(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -161,24 +229,12 @@ function wordmark(
   ctx.restore();
 }
 
-// ---- slot layouts per bubble type -------------------------------------------
+// ---- slot layouts per strip type ---------------------------------------------
 
-// 4 Bubbles — Square: 1200×1200, 2×2 grid, footer band for the wordmark.
-const SQ = { w: 1200, h: 1200, m: 64, gap: 36, footer: 168 };
-const sqCell = (SQ.w - SQ.m * 2 - SQ.gap) / 2; // 518
-const sqCellH = (SQ.h - SQ.m - SQ.footer - SQ.gap - 40) / 2; // grid ends 40px above footer
-const squareSlots: Slot[] = [0, 1, 2, 3].map((i) => ({
-  x: SQ.m + (i % 2) * (sqCell + SQ.gap),
-  y: SQ.m + Math.floor(i / 2) * (sqCellH + SQ.gap),
-  w: sqCell,
-  h: sqCellH,
-  r: 20,
-}));
-
-// 3 Bubbles — Vertical Half Strip: 600×1800, 3 stacked, footer band.
+// Half strip: 600×1800, 3 stacked, footer band.
 const ST = { w: 600, h: 1800, m: 46, gap: 32, footer: 196 };
 const stCellH = (ST.h - ST.m - ST.footer - ST.gap * 2 - 36) / 3;
-const stripSlots: Slot[] = [0, 1, 2].map((i) => ({
+const halfStripSlots: Slot[] = [0, 1, 2].map((i) => ({
   x: ST.m,
   y: ST.m + i * (stCellH + ST.gap),
   w: ST.w - ST.m * 2,
@@ -186,105 +242,37 @@ const stripSlots: Slot[] = [0, 1, 2].map((i) => ({
   r: 16,
 }));
 
-// 1 Bubble — Keychain: 900×900 tag with a circular photo window.
+// Full strip: 1414×2000 (double the half strip's width — the real artwork's
+// native size), 2×2 grid, footer band. Placeholder slots until overlay PNGs
+// arrive; the real designs use circular bubble windows.
+const FS = { w: 1414, h: 2000, m: 80, gap: 44, footer: 220 };
+const fsCellW = (FS.w - FS.m * 2 - FS.gap) / 2;
+const fsCellH = (FS.h - FS.m - FS.footer - FS.gap - 40) / 2;
+const fullStripSlots: Slot[] = [0, 1, 2, 3].map((i) => ({
+  x: FS.m + (i % 2) * (fsCellW + FS.gap),
+  y: FS.m + Math.floor(i / 2) * (fsCellH + FS.gap),
+  w: fsCellW,
+  h: fsCellH,
+  r: 20,
+}));
+
+// Keychain: 900×900 tag with a circular photo window.
 const KC = { w: 900, h: 900 };
 const keychainSlots: Slot[] = [{ x: 170, y: 210, w: 560, h: 560, circle: true }];
 
-// ---- the 7 frames -----------------------------------------------------------
+// ---- the frames ----------------------------------------------------------------
 
 export const FRAMES: Frame[] = [
-  // ---- 4-square (3 designs) ----
-  {
-    id: "sq-sea-u-later",
-    name: "Sea U Later",
-    bubbleType: "4-square",
-    width: SQ.w,
-    height: SQ.h,
-    slots: squareSlots,
-    sample: "/assets/Samples/thumbs/4 Bubbles - Sea U Later.webp",
-    drawBackground(ctx) {
-      ctx.fillStyle = POOL;
-      ctx.fillRect(0, 0, SQ.w, SQ.h);
-      bubbles(ctx, SQ.w, SQ.h, FOAM, [
-        [6, 8, 46], [94, 12, 30], [4, 60, 24], [96, 55, 40], [8, 92, 30], [90, 94, 50],
-      ]);
-      for (const s of squareSlots) {
-        roundRect(ctx, s.x - 12, s.y - 12, s.w + 24, s.h + 24, (s.r ?? 0) + 10);
-        ctx.fillStyle = FOAM;
-        ctx.fill();
-      }
-    },
-    drawForeground(ctx, font) {
-      wordmark(ctx, SQ.w / 2, SQ.h - SQ.footer / 2 - 8, 76, WATER, font);
-      bubbles(ctx, SQ.w, SQ.h, GOLD, [[22, 89, 14], [78, 91, 18]]);
-    },
-  },
-  {
-    id: "sq-nemo",
-    name: "Nemo",
-    bubbleType: "4-square",
-    width: SQ.w,
-    height: SQ.h,
-    slots: squareSlots,
-    sample: "/assets/Samples/thumbs/4 Bubbles - Nemo.webp",
-    drawBackground(ctx) {
-      const g = ctx.createLinearGradient(0, 0, 0, SQ.h);
-      g.addColorStop(0, "#12505F");
-      g.addColorStop(1, WATER);
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, SQ.w, SQ.h);
-      bubbles(ctx, SQ.w, SQ.h, POOL, [
-        [8, 14, 38], [93, 8, 26], [5, 78, 28], [95, 70, 44], [50, 96, 20],
-      ]);
-      for (const s of squareSlots) {
-        roundRect(ctx, s.x - 12, s.y - 12, s.w + 24, s.h + 24, (s.r ?? 0) + 10);
-        ctx.fillStyle = FOAM;
-        ctx.fill();
-      }
-    },
-    drawForeground(ctx, font) {
-      wordmark(ctx, SQ.w / 2, SQ.h - SQ.footer / 2 - 8, 76, FOAM, font);
-    },
-  },
-  {
-    id: "sq-fih",
-    name: "Fih.",
-    bubbleType: "4-square",
-    width: SQ.w,
-    height: SQ.h,
-    slots: squareSlots,
-    sample: "/assets/Samples/thumbs/4 Bubbles - Fih..webp",
-    drawBackground(ctx) {
-      ctx.fillStyle = FOAM;
-      ctx.fillRect(0, 0, SQ.w, SQ.h);
-      wave(ctx, SQ.w, SQ.h - SQ.footer - 10, 18, FIN, true, SQ.h);
-      wave(ctx, SQ.w, SQ.h - SQ.footer + 26, 14, GOLD, true, SQ.h);
-      for (const s of squareSlots) {
-        roundRect(ctx, s.x - 12, s.y - 12, s.w + 24, s.h + 24, (s.r ?? 0) + 10);
-        ctx.fillStyle = POOL;
-        ctx.fill();
-      }
-    },
-    drawForeground(ctx, font) {
-      wordmark(ctx, SQ.w / 2, SQ.h - SQ.footer / 2 + 10, 72, FOAM, font);
-    },
-  },
-
-  // ---- 3-strip (3 designs) ----
+  // ---- half strip (3 designs) ----
   {
     id: "st-fih",
     name: "Fih.",
-    bubbleType: "3-strip",
-    // Native size of the real frame artwork; slots are the hand-drawn crayon
-    // circles, sized so the photo edge tucks under the ring stroke.
-    width: 703,
-    height: 2000,
-    slots: [
-      { x: 78, y: 116, w: 494, h: 434, circle: true },
-      { x: 82, y: 668, w: 560, h: 424, circle: true },
-      { x: 78, y: 1222, w: 528, h: 442, circle: true },
-    ],
-    overlay: "/assets/Frame PNGs/3 Bubbles - Fih Transparent.png",
+    layout: "half-strip",
+    // Procedural placeholder until the overlay PNG is re-delivered (the old
+    // "3 Bubbles - Fih Transparent.png" was removed from public/assets).
+    width: ST.w,
+    height: ST.h,
+    slots: halfStripSlots,
     sample: "/assets/Samples/thumbs/3 Bubbles - Fih..webp",
     drawBackground(ctx) {
       ctx.fillStyle = FOAM;
@@ -306,10 +294,10 @@ export const FRAMES: Frame[] = [
   {
     id: "st-nemo",
     name: "Nemo",
-    bubbleType: "3-strip",
+    layout: "half-strip",
     width: ST.w,
     height: ST.h,
-    slots: stripSlots,
+    slots: halfStripSlots,
     sample: "/assets/Samples/thumbs/3 Bubbles - Nemo.webp",
     drawBackground(ctx) {
       const g = ctx.createLinearGradient(0, 0, 0, ST.h);
@@ -320,7 +308,7 @@ export const FRAMES: Frame[] = [
       bubbles(ctx, ST.w, ST.h, POOL, [
         [10, 4, 20], [90, 2.5, 14], [8, 97, 16], [88, 96, 22], [50, 98, 10],
       ]);
-      for (const s of stripSlots) {
+      for (const s of halfStripSlots) {
         roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, (s.r ?? 0) + 8);
         ctx.fillStyle = FOAM;
         ctx.fill();
@@ -333,10 +321,10 @@ export const FRAMES: Frame[] = [
   {
     id: "st-sea-u-later",
     name: "Sea U Later",
-    bubbleType: "3-strip",
+    layout: "half-strip",
     width: ST.w,
     height: ST.h,
-    slots: stripSlots,
+    slots: halfStripSlots,
     sample: "/assets/Samples/thumbs/3 Bubbles - Sea U Later.webp",
     drawBackground(ctx) {
       const g = ctx.createLinearGradient(0, 0, 0, ST.h);
@@ -347,7 +335,7 @@ export const FRAMES: Frame[] = [
       bubbles(ctx, ST.w, ST.h, FOAM, [
         [12, 3, 18], [88, 5, 24], [10, 96, 20], [90, 97, 14],
       ]);
-      for (const s of stripSlots) {
+      for (const s of halfStripSlots) {
         roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, (s.r ?? 0) + 8);
         ctx.fillStyle = FOAM;
         ctx.fill();
@@ -358,15 +346,100 @@ export const FRAMES: Frame[] = [
     },
   },
 
-  // ---- 1-keychain (1 design) ----
+  // ---- full strip (3 designs; procedural until overlay PNGs arrive) ----
+  {
+    id: "fs-fih",
+    name: "Fih.",
+    layout: "full-strip",
+    width: FS.w,
+    height: FS.h,
+    slots: fullStripSlots,
+    sample: "/assets/Samples/thumbs/4 Bubbles - Fih..webp",
+    drawBackground(ctx) {
+      ctx.fillStyle = FOAM;
+      ctx.fillRect(0, 0, FS.w, FS.h);
+      ctx.fillStyle = POOL;
+      for (let y = 60; y < FS.h - 40; y += 90) {
+        ctx.beginPath();
+        ctx.arc(18, y, 8, 0, Math.PI * 2);
+        ctx.arc(FS.w - 18, y + 45, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      for (const s of fullStripSlots) {
+        roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, (s.r ?? 0) + 8);
+        ctx.fillStyle = POOL;
+        ctx.fill();
+      }
+    },
+    drawForeground(ctx, font) {
+      wordmark(ctx, FS.w / 2, FS.h - FS.footer / 2 - 6, 60, WATER, font);
+      bubbles(ctx, FS.w, FS.h, KELP, [[18, 95, 10], [82, 95.8, 13]]);
+    },
+  },
+  {
+    id: "fs-nemo",
+    name: "Nemo",
+    layout: "full-strip",
+    width: FS.w,
+    height: FS.h,
+    slots: fullStripSlots,
+    sample: "/assets/Samples/thumbs/4 Bubbles - Nemo.webp",
+    drawBackground(ctx) {
+      const g = ctx.createLinearGradient(0, 0, 0, FS.h);
+      g.addColorStop(0, "#12505F");
+      g.addColorStop(1, WATER);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, FS.w, FS.h);
+      bubbles(ctx, FS.w, FS.h, POOL, [
+        [10, 3, 20], [90, 2, 14], [8, 97.5, 16], [88, 97, 22], [50, 98.5, 10],
+      ]);
+      for (const s of fullStripSlots) {
+        roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, (s.r ?? 0) + 8);
+        ctx.fillStyle = FOAM;
+        ctx.fill();
+      }
+    },
+    drawForeground(ctx, font) {
+      wordmark(ctx, FS.w / 2, FS.h - FS.footer / 2 - 6, 60, POOL, font);
+    },
+  },
+  {
+    id: "fs-sea-u-later",
+    name: "Sea U Later",
+    layout: "full-strip",
+    width: FS.w,
+    height: FS.h,
+    slots: fullStripSlots,
+    sample: "/assets/Samples/thumbs/4 Bubbles - Sea U Later.webp",
+    drawBackground(ctx) {
+      const g = ctx.createLinearGradient(0, 0, 0, FS.h);
+      g.addColorStop(0, FIN);
+      g.addColorStop(1, GOLD);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, FS.w, FS.h);
+      bubbles(ctx, FS.w, FS.h, FOAM, [
+        [12, 2.5, 18], [88, 4, 24], [10, 97, 20], [90, 97.8, 14],
+      ]);
+      for (const s of fullStripSlots) {
+        roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, (s.r ?? 0) + 8);
+        ctx.fillStyle = FOAM;
+        ctx.fill();
+      }
+    },
+    drawForeground(ctx, font) {
+      wordmark(ctx, FS.w / 2, FS.h - FS.footer / 2 - 6, 60, FOAM, font);
+    },
+  },
+
+  // ---- keychain (1 design; applied automatically for Lapu-Lapu) ----
   {
     id: "kc-bubble",
     name: "Bubble Tag",
-    bubbleType: "1-keychain",
+    layout: "keychain",
     width: KC.w,
     height: KC.h,
     slots: keychainSlots,
-    sample: "/assets/Samples/thumbs/Keychain Sample.webp",
+    sample: "/assets/ui/keychain-sample.svg",
     drawBackground(ctx) {
       ctx.fillStyle = POOL;
       ctx.fillRect(0, 0, KC.w, KC.h);
@@ -395,9 +468,18 @@ export const FRAMES: Frame[] = [
   },
 ];
 
-export function framesFor(type: BubbleType): Frame[] {
-  return FRAMES.filter((f) => f.bubbleType === type);
+// Picker order matches the mockup: Sea U Later, Nemo, Fih.
+const PICKER_ORDER = ["Sea U Later", "Nemo", "Fih."];
+
+export function framesFor(stripType: StripType): Frame[] {
+  const layout: FrameLayout = stripType === "half" ? "half-strip" : "full-strip";
+  return FRAMES.filter((f) => f.layout === layout).sort(
+    (a, b) => PICKER_ORDER.indexOf(a.name) - PICKER_ORDER.indexOf(b.name),
+  );
 }
+
+/** The single keychain frame, used automatically by the Lapu-Lapu package. */
+export const KEYCHAIN_FRAME = FRAMES.find((f) => f.layout === "keychain")!;
 
 export function frameById(id: string): Frame | undefined {
   return FRAMES.find((f) => f.id === id);

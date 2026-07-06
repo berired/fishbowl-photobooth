@@ -1,59 +1,66 @@
 "use client";
 
-// Page 2 — Selection: Step A picks the bubble type (sets requiredCount),
-// Step B picks a frame design filtered to that type. Both steps live on this
-// page; the step swap is an in-place slide, not a navigation.
+// Page 2 — Selection, 1:1 with mockup pages 2–4:
+//   Step 1 of 3 — PICK YOUR PACKAGE (bangus / tilapia / lapu-lapu cards)
+//   Step 2 of 3 — PICK YOUR BUBBLES (4 bubbles = full strip, 3 = half strip)
+//   Step 3 of 3 — PICK YOUR FRAME (sea u later / nemo / fih.)
+// All steps live on this page; the step swap is an in-place slide.
 
 import { useSession } from "@/lib/store";
-import { BUBBLE_TYPES, framesFor, type BubbleType } from "@/lib/frames";
+import {
+  PACKAGES,
+  packageById,
+  framesFor,
+  KEYCHAIN_SAMPLE,
+  type PackageId,
+  type StripType,
+} from "@/lib/frames";
 import { FramePreview } from "./FramePreview";
+import { RetroScreen, RetroHeader } from "./retro";
 
-function BubbleTypeStep() {
-  const chooseBubbleType = useSession((s) => s.chooseBubbleType);
+function BackLink({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-pixel px-8 py-4 text-[clamp(1rem,1.6vw,1.35rem)] text-white [text-shadow:2px_2px_0_#111] underline-offset-8 hover:underline"
+    >
+      {children}
+    </button>
+  );
+}
+
+function PackageStep() {
+  const choosePackage = useSession((s) => s.choosePackage);
 
   return (
     <div className="step-in flex h-full flex-col items-center justify-center gap-10 px-6">
-      <header className="text-center">
-        <p className="text-sm font-bold uppercase tracking-[0.3em] text-kelp">Step 1 of 2</p>
-        <h2
-          className="mt-2 text-[clamp(2rem,6vw,3.5rem)] font-bold"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          Pick your bubbles
-        </h2>
-      </header>
+      <RetroHeader kicker="Step 1 of 3" title="Pick your package" />
 
-      <div className="grid w-full max-w-4xl gap-6 sm:grid-cols-3">
-        {BUBBLE_TYPES.map((b) => (
+      <div className="grid w-full max-w-7xl gap-10 sm:grid-cols-3">
+        {PACKAGES.map((p) => (
           <button
-            key={b.id}
+            key={p.id}
             type="button"
-            onClick={() => chooseBubbleType(b.id as BubbleType)}
-            className="group flex flex-col items-center gap-4 rounded-3xl bg-foam p-8 shadow-md shadow-water/10 transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.98]"
+            onClick={() => choosePackage(p.id)}
+            className="panel95 flex flex-col items-center gap-5 p-6"
           >
-            {/* bubble cluster sized to the count */}
-            <div className="flex h-24 items-center justify-center gap-2">
-              {Array.from({ length: b.requiredCount }).map((_, i) => (
-                <span
-                  key={i}
-                  className="block rounded-full border-4 border-kelp/60 transition-colors group-hover:border-gold"
-                  style={{
-                    width: 64 - b.requiredCount * 8,
-                    height: 64 - b.requiredCount * 8,
-                    boxShadow: "inset -5px -5px 0 rgba(21,122,140,0.15)",
-                  }}
+            <div className="text-pixel text-[clamp(0.85rem,1.15vw,1.1rem)] text-ink">
+              {p.tagline}
+            </div>
+            {/* finished-design samples of what the package includes */}
+            <div className="flex h-[38vh] items-center justify-center gap-4">
+              {p.samples.map((src) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={src}
+                  src={src}
+                  alt=""
+                  className="max-h-[38vh] min-w-0 flex-shrink object-contain shadow-md shadow-ink/30"
                 />
               ))}
             </div>
-            <div className="text-center">
-              <div
-                className="text-2xl font-bold"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                {b.label}
-              </div>
-              <div className="mt-1 text-sm font-semibold text-kelp">{b.sublabel}</div>
-            </div>
+            <div className="text-pixel text-[clamp(1.2rem,1.7vw,1.7rem)] text-ink">{p.name}</div>
           </button>
         ))}
       </div>
@@ -61,67 +68,115 @@ function BubbleTypeStep() {
   );
 }
 
-function FrameDesignStep() {
-  const bubbleType = useSession((s) => s.bubbleType);
-  const chooseFrame = useSession((s) => s.chooseFrame);
-  const backToBubbleType = useSession((s) => s.backToBubbleType);
-  if (!bubbleType) return null;
+// The bubbles diagram on the step-2 cards: 4 = 2×2 grid, 3 = one over two.
+function BubbleDiagram({ count }: { count: 3 | 4 }) {
+  const bubble = <span className="bubble-diagram block h-24 w-24 sm:h-32 sm:w-32" />;
+  return count === 4 ? (
+    <div className="grid grid-cols-2 gap-5">
+      {bubble}
+      {bubble}
+      {bubble}
+      {bubble}
+    </div>
+  ) : (
+    <div className="flex flex-col items-center gap-5">
+      {bubble}
+      <div className="flex gap-5">
+        {bubble}
+        {bubble}
+      </div>
+    </div>
+  );
+}
 
-  const frames = framesFor(bubbleType);
-  const label = BUBBLE_TYPES.find((b) => b.id === bubbleType)!.label;
+function BubblesStep() {
+  const packageId = useSession((s) => s.packageId);
+  const chooseVariant = useSession((s) => s.chooseVariant);
+  const backToPackage = useSession((s) => s.backToPackage);
+  if (!packageId) return null;
+
+  const pkg = packageById(packageId as PackageId);
+  const pick = (stripType: StripType) => {
+    const variant = pkg.variants.find((v) => v.stripType === stripType)!;
+    chooseVariant(variant.id);
+  };
+
+  return (
+    <div className="step-in flex h-full flex-col items-center justify-center gap-10 px-6">
+      <RetroHeader kicker="Step 2 of 3" title="Pick your bubbles" />
+
+      <div className="grid w-full max-w-4xl gap-10 sm:grid-cols-2">
+        {([4, 3] as const).map((count) => (
+          <button
+            key={count}
+            type="button"
+            onClick={() => pick(count === 4 ? "full" : "half")}
+            className="panel95 flex aspect-square flex-col items-center justify-center gap-8 p-8"
+          >
+            <BubbleDiagram count={count} />
+            <div className="text-pixel text-[clamp(1.2rem,1.7vw,1.7rem)] text-ink">
+              {count} bubbles
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {pkg.keychain ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={KEYCHAIN_SAMPLE}
+          alt="Includes a bubble keychain"
+          className="h-28 object-contain drop-shadow-[3px_3px_0_rgba(17,17,17,0.4)]"
+        />
+      ) : null}
+
+      <BackLink onClick={backToPackage}>← Change package</BackLink>
+    </div>
+  );
+}
+
+function FrameDesignStep() {
+  const packageId = useSession((s) => s.packageId);
+  const variantId = useSession((s) => s.variantId);
+  const chooseFrame = useSession((s) => s.chooseFrame);
+  const backToVariant = useSession((s) => s.backToVariant);
+  if (!packageId || !variantId) return null;
+
+  const pkg = packageById(packageId as PackageId);
+  const variant = pkg.variants.find((v) => v.id === variantId)!;
+  const frames = framesFor(variant.stripType);
 
   return (
     <div className="step-in flex h-full flex-col items-center justify-center gap-8 px-6">
-      <header className="text-center">
-        <p className="text-sm font-bold uppercase tracking-[0.3em] text-kelp">
-          Step 2 of 2 · {label}
-        </p>
-        <h2
-          className="mt-2 text-[clamp(2rem,6vw,3.5rem)] font-bold"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          Pick a frame
-        </h2>
-      </header>
+      <RetroHeader kicker="Step 3 of 3" title="Pick your frame" />
 
-      <div className="flex w-full max-w-4xl flex-wrap items-end justify-center gap-6">
+      <div className="flex w-full max-w-7xl flex-wrap items-stretch justify-center gap-10">
         {frames.map((f) => (
           <button
             key={f.id}
             type="button"
             onClick={() => chooseFrame(f.id)}
-            className="group flex flex-col items-center gap-3 rounded-3xl bg-foam p-4 shadow-md shadow-water/10 transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.98]"
+            className="panel95 flex flex-col items-center justify-between gap-4 p-6"
           >
             {f.sample ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={f.sample}
                 alt={`${f.name} frame sample`}
-                className="max-h-[46vh] w-auto max-w-[38vw] rounded-xl object-contain sm:max-w-[240px]"
+                className="max-h-[50vh] w-auto max-w-[36vw] object-contain shadow-md shadow-ink/30 sm:max-w-[280px]"
               />
             ) : (
               <FramePreview
                 frame={f}
-                className="max-h-[46vh] w-auto max-w-[38vw] rounded-xl sm:max-w-[240px]"
+                className="max-h-[50vh] w-auto max-w-[36vw] sm:max-w-[280px]"
               />
             )}
-            <span
-              className="text-lg font-bold group-hover:text-gold"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              {f.name}
-            </span>
+            <span className="text-pixel text-[clamp(1.1rem,1.5vw,1.5rem)] text-ink">{f.name}</span>
           </button>
         ))}
       </div>
 
-      <button
-        type="button"
-        onClick={backToBubbleType}
-        className="rounded-full px-6 py-3 text-base font-bold text-kelp underline-offset-4 hover:underline"
-      >
-        ← Change bubbles
-      </button>
+      <BackLink onClick={backToVariant}>← Change bubbles</BackLink>
     </div>
   );
 }
@@ -129,8 +184,10 @@ function FrameDesignStep() {
 export function SelectionPage() {
   const status = useSession((s) => s.status);
   return (
-    <div className="h-full w-full bg-pool text-water">
-      {status === "selecting-bubble" ? <BubbleTypeStep /> : <FrameDesignStep />}
-    </div>
+    <RetroScreen>
+      {status === "selecting-package" && <PackageStep />}
+      {status === "selecting-variant" && <BubblesStep />}
+      {status === "selecting-frame" && <FrameDesignStep />}
+    </RetroScreen>
   );
 }

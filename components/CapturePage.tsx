@@ -1,15 +1,17 @@
 "use client";
 
 // Page 3 — Capture. All internal states (start modal → burst ×6 → retake
-// check → photo selection → final review → sending → done) render inside this
-// one component; the <video> element stays mounted through burst + retakes so
-// the camera permission is requested exactly once per session.
+// check → photo selection → [keychain pick, Lapu-Lapu only] → final review →
+// sending → done) render inside this one component; the <video> element stays
+// mounted through burst + retakes so the camera permission is requested
+// exactly once per session. Visuals are 1:1 with mockup pages 5–8.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "@/lib/store";
-import { frameById } from "@/lib/frames";
+import { frameById, KEYCHAIN_FRAME } from "@/lib/frames";
 import { buildComposite } from "@/lib/composite";
 import { BURST_COUNT, COUNTDOWN_SECONDS, DONE_SECONDS, INTER_SHOT_MS } from "@/lib/config";
+import { RetroScreen, RetroHeader, Btn95 } from "./retro";
 
 // ---- capture helper ---------------------------------------------------------
 
@@ -27,50 +29,6 @@ function captureFrame(video: HTMLVideoElement | null): string | null {
   return c.toDataURL("image/jpeg", 0.9);
 }
 
-// ---- shared bits --------------------------------------------------------------
-
-function BigButton({
-  children,
-  onClick,
-  disabled,
-  variant = "gold",
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-  variant?: "gold" | "quiet";
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={
-        variant === "gold"
-          ? "rounded-full bg-gold px-10 py-4 text-xl font-bold text-foam shadow-lg shadow-gold/30 transition-transform active:scale-[0.97] disabled:opacity-40 disabled:shadow-none"
-          : "rounded-full bg-foam px-10 py-4 text-xl font-bold text-water shadow-md shadow-water/10 transition-transform active:scale-[0.97]"
-      }
-      style={{ fontFamily: "var(--font-display)" }}
-    >
-      {children}
-    </button>
-  );
-}
-
-function Heading({ kicker, title }: { kicker: string; title: string }) {
-  return (
-    <header className="text-center">
-      <p className="text-sm font-bold uppercase tracking-[0.3em] text-kelp">{kicker}</p>
-      <h2
-        className="mt-1 text-[clamp(1.6rem,4.5vw,2.6rem)] font-bold text-water"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        {title}
-      </h2>
-    </header>
-  );
-}
-
 // ---- internal views -----------------------------------------------------------
 
 function SessionStartModal({
@@ -83,20 +41,22 @@ function SessionStartModal({
   const requiredCount = useSession((s) => s.requiredCount);
   return (
     <div className="step-in flex h-full flex-col items-center justify-center gap-8 px-8">
-      <div className="flex max-w-lg flex-col items-center gap-6 rounded-3xl bg-foam p-10 text-center shadow-xl shadow-water/15">
-        <Heading kicker="Ready?" title="Here's how it works" />
-        <ol className="space-y-3 text-left text-lg font-semibold text-water/85">
+      <div className="panel95 flex max-w-3xl flex-col items-center gap-8 p-12 text-center">
+        <RetroHeader small kicker="Ready?" title="Here's how it works" />
+        <ol className="text-pixel space-y-5 text-left text-[clamp(1rem,1.4vw,1.3rem)] leading-relaxed text-ink">
           <li>1. The camera takes {BURST_COUNT} photos, one at a time.</li>
           <li>2. Each photo has a {COUNTDOWN_SECONDS}-second countdown — strike a pose!</li>
           <li>3. Afterwards, pick your favorite {requiredCount === 1 ? "photo" : `${requiredCount} photos`} for your frame.</li>
         </ol>
         {camError ? (
-          <div className="rounded-2xl bg-fin/30 p-4 text-base font-semibold text-water">
+          <div className="text-pixel border-2 border-ink bg-fin/60 p-5 text-[clamp(0.9rem,1.2vw,1.1rem)] text-ink">
             <p>The camera isn&apos;t available: {camError}</p>
-            <p className="mt-1">Allow camera access in the browser, then try again.</p>
+            <p className="mt-2">Allow camera access in the browser, then try again.</p>
           </div>
         ) : null}
-        <BigButton onClick={onStart}>Start Picture</BigButton>
+        <Btn95 onClick={onStart} primary>
+          Start Picture
+        </Btn95>
       </div>
     </div>
   );
@@ -153,48 +113,48 @@ function BurstCaptureView({ videoRef }: { videoRef: React.RefObject<HTMLVideoEle
 
   return (
     <div className="relative flex h-full flex-col items-center justify-center gap-5 px-4 py-6">
-      <Heading kicker="Smile!" title={`Photo ${Math.min(shot + 1, BURST_COUNT)} of ${BURST_COUNT}`} />
+      <RetroHeader
+        small
+        kicker="Smile!"
+        title={`Photo ${Math.min(shot + 1, BURST_COUNT)} of ${BURST_COUNT}`}
+      />
 
-      <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl bg-water shadow-xl shadow-water/25">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="aspect-video w-full object-cover"
-          style={{ transform: "scaleX(-1)" }}
-        />
+      {/* black camera panel with a beveled frame, countdown pinned top-right */}
+      <div className="panel95 relative w-full max-w-5xl p-3">
+        <div className="relative overflow-hidden bg-ink">
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="aspect-video w-full object-cover"
+            style={{ transform: "scaleX(-1)" }}
+          />
 
-        {/* signature countdown bubble — swells each second, pops into the
-            flash; tucked in the corner so it never covers the subject */}
-        {counting ? (
-          <div className="pointer-events-none absolute right-4 top-4">
-            <div
-              key={seconds}
-              className="bubble-swell grid h-20 w-20 place-items-center rounded-full border-4 border-foam/80 bg-water/30 backdrop-blur-sm sm:h-28 sm:w-28"
-              style={{ boxShadow: "inset -8px -8px 0 rgba(246,251,250,0.18)" }}
-            >
-              <span
-                className="text-4xl font-extrabold text-foam sm:text-6xl"
-                style={{ fontFamily: "var(--font-display)" }}
-                aria-live="polite"
+          {counting ? (
+            <div className="pointer-events-none absolute right-5 top-5">
+              <div
+                key={seconds}
+                className="bubble-swell grid h-24 w-24 place-items-center rounded-full border-4 border-butter bg-ink/40 sm:h-32 sm:w-32"
               >
-                {seconds}
-              </span>
+                <span className="text-pixel text-4xl text-butter sm:text-6xl" aria-live="polite">
+                  {seconds}
+                </span>
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {flash ? <div className="flash-pop pointer-events-none absolute inset-0 bg-foam" /> : null}
+          {flash ? <div className="flash-pop pointer-events-none absolute inset-0 bg-foam" /> : null}
+        </div>
       </div>
 
       {/* progress bubbles */}
-      <div className="flex gap-3" aria-label={`${shot} of ${BURST_COUNT} photos taken`}>
+      <div className="flex gap-4" aria-label={`${shot} of ${BURST_COUNT} photos taken`}>
         {Array.from({ length: BURST_COUNT }).map((_, i) => (
           <span
             key={i}
-            className={`block h-5 w-5 rounded-full border-[3px] transition-colors duration-300 ${
-              i < shot ? "border-gold bg-gold" : "border-kelp/50 bg-transparent"
+            className={`block h-6 w-6 rounded-full border-[3px] transition-colors duration-300 ${
+              i < shot ? "border-butter bg-butter" : "border-white/80 bg-transparent"
             }`}
           />
         ))}
@@ -209,29 +169,26 @@ function RetakeCheckView() {
   const acceptBurst = useSession((s) => s.acceptBurst);
 
   return (
-    <div className="step-in flex h-full flex-col items-center justify-center gap-8 px-6 lg:flex-row lg:gap-14">
-      {/* the 6 raw photos on one side… */}
-      <div className="grid w-full max-w-2xl grid-cols-3 gap-3">
+    <div className="step-in flex h-full flex-col items-center justify-center gap-7 px-6">
+      <RetroHeader kicker="Look good?" title={`Retake all ${BURST_COUNT}?`} />
+
+      <div className="grid w-full max-w-5xl grid-cols-3 gap-5">
         {burstPhotos.map((p, i) => (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             key={i}
             src={p}
             alt={`Photo ${i + 1}`}
-            className="aspect-video w-full rounded-2xl border-4 border-foam object-cover shadow-md shadow-water/15"
+            className="aspect-video w-full border-2 border-ink object-cover shadow-[4px_4px_0_rgba(17,17,17,0.4)]"
           />
         ))}
       </div>
 
-      {/* …Yes/No alongside them, both visible at once */}
-      <div className="flex flex-col items-center gap-6">
-        <Heading kicker="Look good?" title="Retake all 6?" />
-        <div className="flex gap-4 lg:flex-col">
-          <BigButton onClick={retakeAll} variant="quiet">
-            Yes, retake
-          </BigButton>
-          <BigButton onClick={acceptBurst}>No, keep these</BigButton>
-        </div>
+      <div className="flex flex-wrap justify-center gap-6">
+        <Btn95 onClick={retakeAll}>Yes, retake</Btn95>
+        <Btn95 onClick={acceptBurst} primary>
+          No, keep these
+        </Btn95>
       </div>
     </div>
   );
@@ -248,16 +205,16 @@ function SelectionView() {
 
   return (
     <div className="step-in flex h-full flex-col items-center justify-center gap-7 px-6">
-      <Heading
+      <RetroHeader
         kicker="Your bubbles"
         title={
           remaining > 0
             ? `Pick ${remaining} more photo${remaining === 1 ? "" : "s"}`
-            : "Perfect — ready to go!"
+            : "Perfect - ready to go!"
         }
       />
 
-      <div className="grid w-full max-w-3xl grid-cols-2 gap-4 sm:grid-cols-3">
+      <div className="grid w-full max-w-5xl grid-cols-2 gap-5 sm:grid-cols-3">
         {burstPhotos.map((p, i) => {
           const id = String(i);
           const order = selectedPhotoIds.indexOf(id);
@@ -268,19 +225,16 @@ function SelectionView() {
               type="button"
               onClick={() => togglePhoto(id)}
               aria-pressed={selected}
-              className={`relative overflow-hidden rounded-2xl border-4 transition-all duration-200 active:scale-[0.97] ${
+              className={`relative overflow-hidden border-4 transition-all duration-200 active:scale-[0.97] ${
                 selected
-                  ? "scale-[1.02] border-gold shadow-lg shadow-gold/25"
-                  : "border-foam shadow-md shadow-water/10"
+                  ? "scale-[1.02] border-butter shadow-[4px_4px_0_rgba(17,17,17,0.5)]"
+                  : "border-ink shadow-[4px_4px_0_rgba(17,17,17,0.35)]"
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={p} alt={`Photo ${i + 1}`} className="aspect-video w-full object-cover" />
               {selected ? (
-                <span
-                  className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full bg-gold text-lg font-extrabold text-foam"
-                  style={{ fontFamily: "var(--font-display)" }}
-                >
+                <span className="text-pixel absolute right-3 top-3 grid h-14 w-14 place-items-center rounded-full border-[3px] border-navy bg-butter text-2xl text-navy">
                   {order + 1}
                 </span>
               ) : null}
@@ -289,9 +243,43 @@ function SelectionView() {
         })}
       </div>
 
-      <BigButton onClick={confirmSelection} disabled={remaining !== 0}>
+      <Btn95 onClick={confirmSelection} disabled={remaining !== 0}>
         Continue
-      </BigButton>
+      </Btn95>
+    </div>
+  );
+}
+
+// Lapu-Lapu only — one of the strip photos also goes on the bubble keychain.
+function KeychainPickView() {
+  const burstPhotos = useSession((s) => s.burstPhotos);
+  const selectedPhotoIds = useSession((s) => s.selectedPhotoIds);
+  const chooseKeychainPhoto = useSession((s) => s.chooseKeychainPhoto);
+  const backToPhotoSelection = useSession((s) => s.backToPhotoSelection);
+
+  return (
+    <div className="step-in flex h-full flex-col items-center justify-center gap-7 px-6">
+      <RetroHeader kicker="One more!" title="Pick 1 photo for your keychain" />
+
+      <div className="flex w-full max-w-5xl flex-wrap justify-center gap-6">
+        {selectedPhotoIds.map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => chooseKeychainPhoto(id)}
+            className="w-[calc(50%-0.5rem)] overflow-hidden border-4 border-ink shadow-[4px_4px_0_rgba(17,17,17,0.35)] transition-all duration-200 hover:scale-[1.02] hover:border-butter active:scale-[0.97] sm:w-[calc(33.333%-0.7rem)]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={burstPhotos[Number(id)]}
+              alt={`Photo ${Number(id) + 1}`}
+              className="aspect-video w-full object-cover"
+            />
+          </button>
+        ))}
+      </div>
+
+      <Btn95 onClick={backToPhotoSelection}>← Change photos</Btn95>
     </div>
   );
 }
@@ -306,7 +294,11 @@ function FinalReviewView() {
   const sendSucceeded = useSession((s) => s.sendSucceeded);
   const backToPhotoSelection = useSession((s) => s.backToPhotoSelection);
 
+  const keychainPhotoId = useSession((s) => s.keychainPhotoId);
+  const needsKeychain = useSession((s) => s.needsKeychain);
+
   const [composite, setComposite] = useState<string | null>(null);
+  const [keychainComposite, setKeychainComposite] = useState<string | null>(null);
   const frame = frameId ? frameById(frameId) : undefined;
 
   useEffect(() => {
@@ -316,64 +308,85 @@ function FinalReviewView() {
     buildComposite(frame, photos).then((url) => {
       if (!cancelled) setComposite(url);
     });
+    if (needsKeychain && keychainPhotoId !== null) {
+      buildComposite(KEYCHAIN_FRAME, [burstPhotos[Number(keychainPhotoId)]]).then((url) => {
+        if (!cancelled) setKeychainComposite(url);
+      });
+    }
     return () => {
       cancelled = true;
     };
-  }, [frame, selectedPhotoIds, burstPhotos]);
+  }, [frame, selectedPhotoIds, burstPhotos, needsKeychain, keychainPhotoId]);
+
+  const ready = composite !== null && (!needsKeychain || keychainComposite !== null);
 
   const send = useCallback(async () => {
-    if (!composite) return;
+    if (!ready) return;
     startSending();
+    const stamp = new Date().toLocaleString();
+    const uploads: { image: string; title: string }[] = [
+      { image: composite!, title: `Fishbowl ${stamp} — Strip` },
+    ];
+    if (needsKeychain && keychainComposite) {
+      uploads.push({ image: keychainComposite, title: `Fishbowl ${stamp} — Keychain` });
+    }
     try {
-      const res = await fetch("/api/canva/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: composite,
-          title: `Fishbowl ${new Date().toLocaleString()}`,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        throw new Error(data.error ?? `HTTP ${res.status}`);
+      for (const body of uploads) {
+        const res = await fetch("/api/canva/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+          throw new Error(data.error ?? `HTTP ${res.status}`);
+        }
       }
       sendSucceeded();
     } catch (e) {
       sendFailed(e instanceof Error ? e.message : String(e));
     }
-  }, [composite, startSending, sendSucceeded, sendFailed]);
+  }, [ready, composite, keychainComposite, needsKeychain, startSending, sendSucceeded, sendFailed]);
 
   return (
     <div className="step-in flex h-full flex-col items-center justify-center gap-6 px-6">
-      <Heading kicker="Final look" title="Here's your fishbowl!" />
+      <RetroHeader kicker="Final look" title="Here's your bubbles!" />
 
-      <div className="grid max-h-[58vh] place-items-center">
-        {composite ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={composite}
-            alt="Your finished photo frame"
-            className="max-h-[58vh] w-auto rounded-2xl shadow-xl shadow-water/25"
-          />
+      <div className="flex max-h-[56vh] items-center justify-center gap-6">
+        {ready ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={composite!}
+              alt="Your finished photo strip"
+              className="max-h-[56vh] w-auto shadow-[6px_6px_0_rgba(17,17,17,0.4)]"
+            />
+            {keychainComposite ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={keychainComposite}
+                alt="Your keychain"
+                className="max-h-[26vh] w-auto shadow-[6px_6px_0_rgba(17,17,17,0.4)]"
+              />
+            ) : null}
+          </>
         ) : (
-          <p className="pulse-soft text-lg font-bold text-kelp">Assembling your photos…</p>
+          <p className="kicker-pixel pulse-soft text-2xl">Assembling your photos…</p>
         )}
       </div>
 
       {sendError ? (
-        <div className="max-w-xl rounded-2xl bg-fin/30 px-5 py-3 text-center text-base font-semibold text-water">
+        <div className="text-pixel max-w-2xl border-2 border-ink bg-fin/70 px-6 py-4 text-center text-[clamp(0.9rem,1.2vw,1.1rem)] text-ink">
           Sending didn&apos;t go through — tap &ldquo;Confirm &amp; Send&rdquo; to try again.
-          <span className="mt-1 block text-sm font-normal opacity-70">{sendError}</span>
+          <span className="mt-2 block normal-case tracking-normal opacity-70">{sendError}</span>
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-center gap-4">
-        <BigButton onClick={backToPhotoSelection} variant="quiet">
-          ← Change photos
-        </BigButton>
-        <BigButton onClick={send} disabled={!composite}>
+      <div className="flex flex-wrap items-center justify-center gap-6">
+        <Btn95 onClick={backToPhotoSelection}>Change photos</Btn95>
+        <Btn95 onClick={send} disabled={!ready} primary>
           Confirm &amp; Send
-        </BigButton>
+        </Btn95>
       </div>
     </div>
   );
@@ -382,21 +395,16 @@ function FinalReviewView() {
 function SendingView() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-8">
-      <div className="flex gap-3" aria-hidden>
+      <div className="flex gap-5" aria-hidden>
         {[0, 1, 2].map((i) => (
           <span
             key={i}
-            className="bob block h-8 w-8 rounded-full border-4 border-kelp/60"
-            style={{ animationDelay: `${i * 0.25}s`, boxShadow: "inset -4px -4px 0 rgba(21,122,140,0.15)" }}
+            className="bob block h-14 w-14 rounded-full border-[5px] border-butter"
+            style={{ animationDelay: `${i * 0.25}s` }}
           />
         ))}
       </div>
-      <p
-        className="text-2xl font-bold text-water"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        Sending your photos…
-      </p>
+      <p className="heading-bubble text-[clamp(2.2rem,5vw,3.6rem)]">Sending your photos…</p>
     </div>
   );
 }
@@ -412,17 +420,19 @@ function DoneView() {
   }, [resetSession]);
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
-      <div className="bob text-7xl" aria-hidden>
-        🫧
+    <div className="flex h-full flex-col items-center justify-center gap-8 px-8 text-center">
+      {/* brand bubbles instead of an emoji icon — consistent with the countdown */}
+      <div className="bob flex items-end gap-4" aria-hidden>
+        <span className="block h-10 w-10 rounded-full border-4 border-butter" />
+        <span className="block h-16 w-16 rounded-full border-[5px] border-butter" />
+        <span className="block h-8 w-8 rounded-full border-4 border-butter" />
       </div>
-      <h2
-        className="text-[clamp(2rem,6vw,3.5rem)] font-bold text-water"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
+      <h2 className="heading-bubble text-[clamp(2.6rem,7vw,5rem)]">
         Your photos are on their way
       </h2>
-      <p className="text-lg font-semibold text-kelp">Thanks for visiting the fishbowl!</p>
+      <p className="kicker-pixel text-[clamp(1.2rem,1.8vw,1.7rem)]">
+        Thanks for visiting the fishbowl!
+      </p>
     </div>
   );
 }
@@ -470,7 +480,7 @@ export function CapturePage() {
   useEffect(() => stopCamera, [stopCamera]);
 
   return (
-    <div className="h-full w-full bg-pool text-water">
+    <RetroScreen>
       {status === "idle" && <SessionStartModal onStart={startSession} camError={camError} />}
       {(status === "bursting" || status === "retake-check") && (
         <>
@@ -483,9 +493,10 @@ export function CapturePage() {
         </>
       )}
       {status === "selecting-photos" && <SelectionView />}
+      {status === "selecting-keychain-photo" && <KeychainPickView />}
       {status === "final-review" && <FinalReviewView />}
       {status === "sending" && <SendingView />}
       {status === "done" && <DoneView />}
-    </div>
+    </RetroScreen>
   );
 }

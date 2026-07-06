@@ -4,13 +4,12 @@
 
 import type { Frame, Slot } from "./frames";
 
-/** Resolve the display font family injected by next/font for canvas use. */
+/** Resolve the heading font for canvas use. Lazydog is the brand heading
+ *  face; --font-display (next/font) lives on <body>, not the root element. */
 function displayFontFamily(): string {
   if (typeof document === "undefined") return "sans-serif";
-  const v = getComputedStyle(document.documentElement)
-    .getPropertyValue("--font-display")
-    .trim();
-  return v || "sans-serif";
+  const v = getComputedStyle(document.body).getPropertyValue("--font-display").trim();
+  return `Lazydog, ${v || "sans-serif"}`;
 }
 
 function clipSlot(ctx: CanvasRenderingContext2D, s: Slot) {
@@ -76,16 +75,22 @@ export async function renderFrame(
   if (!ctx) throw new Error("Canvas 2D context unavailable");
 
   // Real frame artwork: draw it full-bleed, photos go into the slots on top.
+  // If the artwork fails to load (missing/renamed asset), fall through to the
+  // procedural draw — the kiosk must never hang on "Assembling your photos".
   if (frame.overlay) {
-    const art = await loadImage(frame.overlay);
-    ctx.drawImage(art, 0, 0, frame.width, frame.height);
-    if (photos) {
-      const imgs = await Promise.all(photos.map(loadImage));
-      frame.slots.forEach((s, i) => {
-        if (imgs[i]) drawCover(ctx, imgs[i], s);
-      });
+    try {
+      const art = await loadImage(frame.overlay);
+      ctx.drawImage(art, 0, 0, frame.width, frame.height);
+      if (photos) {
+        const imgs = await Promise.all(photos.map(loadImage));
+        frame.slots.forEach((s, i) => {
+          if (imgs[i]) drawCover(ctx, imgs[i], s);
+        });
+      }
+      return;
+    } catch {
+      console.warn(`Frame overlay failed to load: ${frame.overlay}`);
     }
-    return;
   }
 
   const font = displayFontFamily();

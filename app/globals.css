@@ -1,14 +1,48 @@
 @import "tailwindcss";
 
-/* Fishbowl palette — a sunlit aquarium, not a dark kiosk.
-   Keep in sync with lib/frames.ts. */
+/* Brand fonts (files provided by the user in public/assets/fonts/). */
+@font-face {
+  font-family: "Lazydog";
+  src: url("/assets/fonts/lazy_dog/lazy_dog.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Sieben";
+  src: url("/assets/fonts/sieben-Bold/SIEBRG__.TTF") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Sieben";
+  src: url("/assets/fonts/sieben-Bold/SIEBB___.TTF") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* Fishbowl palette — retro-OS mockup (Canva deck DAHOmmwPYhg).
+   Frame-drawing colors in lib/frames.ts keep the aquarium palette. */
 :root {
   --water: #0e3e4a; /* deep bowl teal — ink */
   --kelp: #157a8c; /* mid teal */
-  --pool: #bfe8e4; /* aquarium-glass aqua — main bg */
-  --foam: #f6fbfa; /* near-white foam — cards, photo borders */
-  --gold: #ff7a2f; /* goldfish orange — primary action */
+  --pool: #bfe8e4; /* aquarium-glass aqua */
+  --foam: #f6fbfa; /* near-white foam */
+  --gold: #ff7a2f; /* goldfish orange */
   --fin: #ffb25e; /* light fin orange */
+
+  /* retro-OS tokens */
+  --butter: #faf3ae; /* heading/kicker yellow */
+  --navy: #1b3fa0; /* heading outline + bubble-diagram blue */
+  --win-gray: #c6c6c6; /* button/panel face */
+  --win-gray-dark: #7c7c7c; /* bevel shadow */
+  --win-blue: #1747d0; /* primary button */
+  --win-blue-dark: #0c2f95;
+  --ink: #111111;
+
+  /* NOTE: declared at :root, so this can't reference --font-display (next/font
+     defines it on <body>; a var() here resolves at :root and comes up empty,
+     invalidating the whole stack). Keep this list static. */
+  --font-heading: "Lazydog", "Baloo 2", sans-serif;
+  --font-pixel: "Sieben", "Silkscreen", monospace;
 }
 
 @theme inline {
@@ -18,8 +52,121 @@
   --color-foam: var(--foam);
   --color-gold: var(--gold);
   --color-fin: var(--fin);
-  --font-display: var(--font-display);
-  --font-body: var(--font-body);
+  --color-butter: var(--butter);
+  --color-navy: var(--navy);
+  --color-win-gray: var(--win-gray);
+  --color-win-blue: var(--win-blue);
+  --color-ink: var(--ink);
+}
+
+/* ---- retro-OS building blocks (mockup 1:1) ---- */
+
+/* Every screen sits on the Bliss wallpaper (painted once on the kiosk shell
+   in app/page.tsx, so it holds still while page content transitions).
+   The gradient underneath is a fallback while the image loads. */
+.bg-bliss {
+  background-color: #3d8fe0;
+  background-image:
+    url("/assets/Background.png"),
+    linear-gradient(
+      to bottom,
+      #2f7fd6 0%,
+      #6fb1ea 34%,
+      #a9d4f5 46%,
+      #79b93c 55%,
+      #4f9724 78%,
+      #2f7215 100%
+    );
+  background-size: cover, cover;
+  background-position: center, center;
+}
+
+/* Big bubble headings: Lazydog, butter yellow with a navy outline. */
+.heading-bubble {
+  font-family: var(--font-heading);
+  color: var(--butter);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 0.14em var(--navy);
+  text-shadow: 0.06em 0.09em 0 rgba(17, 17, 17, 0.35);
+}
+
+/* Pixel-font text (kickers, labels, buttons). */
+.text-pixel {
+  font-family: var(--font-pixel);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+/* Pixel kicker above headings: butter yellow, dark edge for readability. */
+.kicker-pixel {
+  font-family: var(--font-pixel);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--butter);
+  text-shadow:
+    -2px 0 0 var(--navy),
+    2px 0 0 var(--navy),
+    0 -2px 0 var(--navy),
+    0 2px 0 var(--navy),
+    2px 2px 0 var(--navy);
+}
+
+/* Win95 beveled button: the provided Selection Buttons artwork, 9-sliced.
+   button-gray.svg / button-blue.svg are the blank faces cropped out of
+   assets/Selection Buttons.svg; slice 26 = bevel thickness in the crop's
+   ~141-unit-tall coordinate system. */
+.btn95 {
+  font-family: var(--font-pixel);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+  background: none;
+  border: clamp(14px, 1.5vw, 20px) solid transparent;
+  border-image: url("/assets/ui/button-gray.svg") 26 fill stretch;
+  padding: 0.7rem 2rem;
+  cursor: pointer;
+  transition: transform 80ms ease;
+}
+.btn95:active {
+  transform: translate(2px, 2px);
+}
+.btn95:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.btn95-primary {
+  color: #ffffff;
+  border-image-source: url("/assets/ui/button-blue.svg");
+}
+
+/* Win95 card/panel: the provided Frame Holder artwork, 9-sliced so the
+   beveled edges stay crisp at any card size (public/assets/ui/frame-holder.svg
+   is a tight-viewBox copy of assets/Frame Holder.svg). Slice 64 = bevel
+   thickness in the SVG's 783.75-unit coordinate system. */
+.panel95 {
+  background: none;
+  border: clamp(18px, 2.4vw, 30px) solid transparent;
+  border-image: url("/assets/ui/frame-holder.svg") 64 fill stretch;
+}
+button.panel95 {
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+button.panel95:hover {
+  transform: translateY(-4px);
+}
+button.panel95:active {
+  transform: translate(2px, 2px);
+}
+
+/* Blue diagram bubble (step 2 cards). */
+.bubble-diagram {
+  border: 4px solid var(--navy);
+  border-radius: 9999px;
+  background: var(--win-gray);
 }
 
 html,
