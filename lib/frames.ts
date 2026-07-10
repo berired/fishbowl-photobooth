@@ -177,6 +177,19 @@ function roundRect(
   ctx.closePath();
 }
 
+/** Inflated halo behind a slot, matching its shape (circle or rounded rect). */
+function slotHalo(ctx: CanvasRenderingContext2D, s: Slot, pad: number, color: string) {
+  ctx.beginPath();
+  if (s.circle) {
+    ctx.ellipse(s.x + s.w / 2, s.y + s.h / 2, s.w / 2 + pad, s.h / 2 + pad, 0, 0, Math.PI * 2);
+  } else {
+    roundRect(ctx, s.x - pad, s.y - pad, s.w + pad * 2, s.h + pad * 2, (s.r ?? 0) + pad);
+  }
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
 /** Deterministic scatter of glassy bubbles. */
 function bubbles(
   ctx: CanvasRenderingContext2D,
@@ -229,32 +242,54 @@ function wordmark(
   ctx.restore();
 }
 
-// ---- slot layouts per strip type ---------------------------------------------
+// ---- real overlay artwork: native size + hand-measured circle windows -------
+// Coordinates measured from each PNG's alpha channel (the transparent bubble
+// windows). Sizes vary per design because the artwork isn't a strict grid.
 
-// Half strip: 600×1800, 3 stacked, footer band.
-const ST = { w: 600, h: 1800, m: 46, gap: 32, footer: 196 };
-const stCellH = (ST.h - ST.m - ST.footer - ST.gap * 2 - 36) / 3;
-const halfStripSlots: Slot[] = [0, 1, 2].map((i) => ({
-  x: ST.m,
-  y: ST.m + i * (stCellH + ST.gap),
-  w: ST.w - ST.m * 2,
-  h: stCellH,
-  r: 16,
-}));
+const FIH_HALF = { w: 1058, h: 3000 };
+const fihHalfSlots: Slot[] = [
+  { x: 116, y: 108, w: 816, h: 780, circle: true },
+  { x: 114, y: 932, w: 826, h: 788, circle: true },
+  { x: 112, y: 1808, w: 836, h: 796, circle: true },
+];
 
-// Full strip: 1414×2000 (double the half strip's width — the real artwork's
-// native size), 2×2 grid, footer band. Placeholder slots until overlay PNGs
-// arrive; the real designs use circular bubble windows.
-const FS = { w: 1414, h: 2000, m: 80, gap: 44, footer: 220 };
-const fsCellW = (FS.w - FS.m * 2 - FS.gap) / 2;
-const fsCellH = (FS.h - FS.m - FS.footer - FS.gap - 40) / 2;
-const fullStripSlots: Slot[] = [0, 1, 2, 3].map((i) => ({
-  x: FS.m + (i % 2) * (fsCellW + FS.gap),
-  y: FS.m + Math.floor(i / 2) * (fsCellH + FS.gap),
-  w: fsCellW,
-  h: fsCellH,
-  r: 20,
-}));
+const NEMO_HALF = { w: 1054, h: 3000 };
+const nemoHalfSlots: Slot[] = [
+  { x: 128, y: 76, w: 788, h: 796, circle: true },
+  { x: 128, y: 932, w: 788, h: 796, circle: true },
+  { x: 120, y: 1796, w: 804, h: 804, circle: true },
+];
+
+const SEA_HALF = { w: 1055, h: 3000 };
+const seaHalfSlots: Slot[] = [
+  { x: 172, y: 124, w: 708, h: 708, circle: true },
+  { x: 176, y: 1004, w: 704, h: 700, circle: true },
+  { x: 168, y: 1888, w: 716, h: 712, circle: true },
+];
+
+const FIH_FULL = { w: 1944, h: 2749 };
+const fihFullSlots: Slot[] = [
+  { x: 132, y: 96, w: 896, h: 916, circle: true },
+  { x: 1016, y: 548, w: 896, h: 780, circle: true },
+  { x: 80, y: 1144, w: 820, h: 824, circle: true },
+  { x: 1004, y: 1616, w: 840, h: 760, circle: true },
+];
+
+const NEMO_FULL = { w: 2121, h: 3000 };
+const nemoFullSlots: Slot[] = [
+  { x: 68, y: 368, w: 956, h: 968, circle: true },
+  { x: 1112, y: 368, w: 952, h: 968, circle: true },
+  { x: 68, y: 1404, w: 956, h: 964, circle: true },
+  { x: 1092, y: 1404, w: 956, h: 968, circle: true },
+];
+
+const SEA_FULL = { w: 2121, h: 3000 };
+const seaFullSlots: Slot[] = [
+  { x: 160, y: 108, w: 832, h: 828, circle: true },
+  { x: 1140, y: 548, w: 864, h: 828, circle: true },
+  { x: 148, y: 1160, w: 864, h: 860, circle: true },
+  { x: 1136, y: 1580, w: 844, h: 844, circle: true },
+];
 
 // Keychain: 900×900 tag with a circular photo window.
 const KC = { w: 900, h: 900 };
@@ -268,81 +303,80 @@ export const FRAMES: Frame[] = [
     id: "st-fih",
     name: "Fih.",
     layout: "half-strip",
-    // Procedural placeholder until the overlay PNG is re-delivered (the old
-    // "3 Bubbles - Fih Transparent.png" was removed from public/assets).
-    width: ST.w,
-    height: ST.h,
-    slots: halfStripSlots,
+    width: FIH_HALF.w,
+    height: FIH_HALF.h,
+    slots: fihHalfSlots,
     sample: "/assets/Samples/thumbs/3 Bubbles - Fih..webp",
+    overlay: "/assets/Frame PNGs/Fih. Half.png",
     drawBackground(ctx) {
+      const { width: w, height: h } = ctx.canvas;
       ctx.fillStyle = FOAM;
-      ctx.fillRect(0, 0, ST.w, ST.h);
+      ctx.fillRect(0, 0, w, h);
       // sprocket-hole edges — photo-strip vernacular
       ctx.fillStyle = POOL;
-      for (let y = 60; y < ST.h - 40; y += 90) {
+      for (let y = 60; y < h - 40; y += 90) {
         ctx.beginPath();
         ctx.arc(18, y, 8, 0, Math.PI * 2);
-        ctx.arc(ST.w - 18, y + 45, 8, 0, Math.PI * 2);
+        ctx.arc(w - 18, y + 45, 8, 0, Math.PI * 2);
         ctx.fill();
       }
     },
     drawForeground(ctx, font) {
-      wordmark(ctx, ST.w / 2, ST.h - ST.footer / 2 - 6, 60, WATER, font);
-      bubbles(ctx, ST.w, ST.h, KELP, [[18, 93.5, 10], [82, 94.5, 13]]);
+      const { width: w, height: h } = ctx.canvas;
+      wordmark(ctx, w / 2, h - h * 0.055, 60, WATER, font);
+      bubbles(ctx, w, h, KELP, [[18, 93.5, 10], [82, 94.5, 13]]);
     },
   },
   {
     id: "st-nemo",
     name: "Nemo",
     layout: "half-strip",
-    width: ST.w,
-    height: ST.h,
-    slots: halfStripSlots,
+    width: NEMO_HALF.w,
+    height: NEMO_HALF.h,
+    slots: nemoHalfSlots,
     sample: "/assets/Samples/thumbs/3 Bubbles - Nemo.webp",
+    overlay: "/assets/Frame PNGs/Nemo Half.png",
     drawBackground(ctx) {
-      const g = ctx.createLinearGradient(0, 0, 0, ST.h);
+      const { width: w, height: h } = ctx.canvas;
+      const g = ctx.createLinearGradient(0, 0, 0, h);
       g.addColorStop(0, "#12505F");
       g.addColorStop(1, WATER);
       ctx.fillStyle = g;
-      ctx.fillRect(0, 0, ST.w, ST.h);
-      bubbles(ctx, ST.w, ST.h, POOL, [
+      ctx.fillRect(0, 0, w, h);
+      bubbles(ctx, w, h, POOL, [
         [10, 4, 20], [90, 2.5, 14], [8, 97, 16], [88, 96, 22], [50, 98, 10],
       ]);
-      for (const s of halfStripSlots) {
-        roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, (s.r ?? 0) + 8);
-        ctx.fillStyle = FOAM;
-        ctx.fill();
-      }
+      for (const s of nemoHalfSlots) slotHalo(ctx, s, 10, FOAM);
     },
     drawForeground(ctx, font) {
-      wordmark(ctx, ST.w / 2, ST.h - ST.footer / 2 - 6, 60, POOL, font);
+      const { width: w, height: h } = ctx.canvas;
+      wordmark(ctx, w / 2, h - h * 0.055, 60, POOL, font);
     },
   },
   {
     id: "st-sea-u-later",
     name: "Sea U Later",
     layout: "half-strip",
-    width: ST.w,
-    height: ST.h,
-    slots: halfStripSlots,
+    width: SEA_HALF.w,
+    height: SEA_HALF.h,
+    slots: seaHalfSlots,
     sample: "/assets/Samples/thumbs/3 Bubbles - Sea U Later.webp",
+    overlay: "/assets/Frame PNGs/Sea U Later Half.png",
     drawBackground(ctx) {
-      const g = ctx.createLinearGradient(0, 0, 0, ST.h);
+      const { width: w, height: h } = ctx.canvas;
+      const g = ctx.createLinearGradient(0, 0, 0, h);
       g.addColorStop(0, FIN);
       g.addColorStop(1, GOLD);
       ctx.fillStyle = g;
-      ctx.fillRect(0, 0, ST.w, ST.h);
-      bubbles(ctx, ST.w, ST.h, FOAM, [
+      ctx.fillRect(0, 0, w, h);
+      bubbles(ctx, w, h, FOAM, [
         [12, 3, 18], [88, 5, 24], [10, 96, 20], [90, 97, 14],
       ]);
-      for (const s of halfStripSlots) {
-        roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, (s.r ?? 0) + 8);
-        ctx.fillStyle = FOAM;
-        ctx.fill();
-      }
+      for (const s of seaHalfSlots) slotHalo(ctx, s, 10, FOAM);
     },
     drawForeground(ctx, font) {
-      wordmark(ctx, ST.w / 2, ST.h - ST.footer / 2 - 6, 60, FOAM, font);
+      const { width: w, height: h } = ctx.canvas;
+      wordmark(ctx, w / 2, h - h * 0.055, 60, FOAM, font);
     },
   },
 
@@ -351,83 +385,80 @@ export const FRAMES: Frame[] = [
     id: "fs-fih",
     name: "Fih.",
     layout: "full-strip",
-    width: FS.w,
-    height: FS.h,
-    slots: fullStripSlots,
+    width: FIH_FULL.w,
+    height: FIH_FULL.h,
+    slots: fihFullSlots,
     sample: "/assets/Samples/thumbs/4 Bubbles - Fih..webp",
+    overlay: "/assets/Frame PNGs/Fih. Full.png",
     drawBackground(ctx) {
+      const { width: w, height: h } = ctx.canvas;
       ctx.fillStyle = FOAM;
-      ctx.fillRect(0, 0, FS.w, FS.h);
+      ctx.fillRect(0, 0, w, h);
       ctx.fillStyle = POOL;
-      for (let y = 60; y < FS.h - 40; y += 90) {
+      for (let y = 60; y < h - 40; y += 90) {
         ctx.beginPath();
         ctx.arc(18, y, 8, 0, Math.PI * 2);
-        ctx.arc(FS.w - 18, y + 45, 8, 0, Math.PI * 2);
+        ctx.arc(w - 18, y + 45, 8, 0, Math.PI * 2);
         ctx.fill();
       }
-      for (const s of fullStripSlots) {
-        roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, (s.r ?? 0) + 8);
-        ctx.fillStyle = POOL;
-        ctx.fill();
-      }
+      for (const s of fihFullSlots) slotHalo(ctx, s, 10, POOL);
     },
     drawForeground(ctx, font) {
-      wordmark(ctx, FS.w / 2, FS.h - FS.footer / 2 - 6, 60, WATER, font);
-      bubbles(ctx, FS.w, FS.h, KELP, [[18, 95, 10], [82, 95.8, 13]]);
+      const { width: w, height: h } = ctx.canvas;
+      wordmark(ctx, w / 2, h - h * 0.055, 60, WATER, font);
+      bubbles(ctx, w, h, KELP, [[18, 95, 10], [82, 95.8, 13]]);
     },
   },
   {
     id: "fs-nemo",
     name: "Nemo",
     layout: "full-strip",
-    width: FS.w,
-    height: FS.h,
-    slots: fullStripSlots,
+    width: NEMO_FULL.w,
+    height: NEMO_FULL.h,
+    slots: nemoFullSlots,
     sample: "/assets/Samples/thumbs/4 Bubbles - Nemo.webp",
+    overlay: "/assets/Frame PNGs/Nemo Full.png",
     drawBackground(ctx) {
-      const g = ctx.createLinearGradient(0, 0, 0, FS.h);
+      const { width: w, height: h } = ctx.canvas;
+      const g = ctx.createLinearGradient(0, 0, 0, h);
       g.addColorStop(0, "#12505F");
       g.addColorStop(1, WATER);
       ctx.fillStyle = g;
-      ctx.fillRect(0, 0, FS.w, FS.h);
-      bubbles(ctx, FS.w, FS.h, POOL, [
+      ctx.fillRect(0, 0, w, h);
+      bubbles(ctx, w, h, POOL, [
         [10, 3, 20], [90, 2, 14], [8, 97.5, 16], [88, 97, 22], [50, 98.5, 10],
       ]);
-      for (const s of fullStripSlots) {
-        roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, (s.r ?? 0) + 8);
-        ctx.fillStyle = FOAM;
-        ctx.fill();
-      }
+      for (const s of nemoFullSlots) slotHalo(ctx, s, 10, FOAM);
     },
     drawForeground(ctx, font) {
-      wordmark(ctx, FS.w / 2, FS.h - FS.footer / 2 - 6, 60, POOL, font);
+      const { width: w, height: h } = ctx.canvas;
+      wordmark(ctx, w / 2, h - h * 0.055, 60, POOL, font);
     },
   },
   {
     id: "fs-sea-u-later",
     name: "Sea U Later",
     layout: "full-strip",
-    width: FS.w,
-    height: FS.h,
-    slots: fullStripSlots,
+    width: SEA_FULL.w,
+    height: SEA_FULL.h,
+    slots: seaFullSlots,
     sample: "/assets/Samples/thumbs/4 Bubbles - Sea U Later.webp",
+    overlay: "/assets/Frame PNGs/Sea U Later Full.png",
     drawBackground(ctx) {
-      const g = ctx.createLinearGradient(0, 0, 0, FS.h);
+      const { width: w, height: h } = ctx.canvas;
+      const g = ctx.createLinearGradient(0, 0, 0, h);
       g.addColorStop(0, FIN);
       g.addColorStop(1, GOLD);
       ctx.fillStyle = g;
-      ctx.fillRect(0, 0, FS.w, FS.h);
-      bubbles(ctx, FS.w, FS.h, FOAM, [
+      ctx.fillRect(0, 0, w, h);
+      bubbles(ctx, w, h, FOAM, [
         [12, 2.5, 18], [88, 4, 24], [10, 97, 20], [90, 97.8, 14],
       ]);
-      for (const s of fullStripSlots) {
-        roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, (s.r ?? 0) + 8);
-        ctx.fillStyle = FOAM;
-        ctx.fill();
-      }
+      for (const s of seaFullSlots) slotHalo(ctx, s, 10, FOAM);
     },
     drawForeground(ctx, font) {
-      wordmark(ctx, FS.w / 2, FS.h - FS.footer / 2 - 6, 60, FOAM, font);
+      const { width: w, height: h } = ctx.canvas;
+      wordmark(ctx, w / 2, h - h * 0.055, 60, FOAM, font);
     },
   },
 
