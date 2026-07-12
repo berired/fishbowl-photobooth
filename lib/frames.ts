@@ -246,54 +246,54 @@ function wordmark(
 // Coordinates measured from each PNG's alpha channel (the transparent bubble
 // windows). Sizes vary per design because the artwork isn't a strict grid.
 
-const FIH_HALF = { w: 1324, h: 3750 };
+const FIH_HALF = { w: 880, h: 2500 };
 const fihHalfSlots: Slot[] = [
-  { x: 150, y: 144, w: 988, h: 913, circle: true },
-  { x: 163, y: 1256, w: 1031, h: 806, circle: true },
-  { x: 144, y: 2256, w: 1056, h: 994, circle: true },
+  { x: 81, y: 50, w: 698, h: 697, circle: true },
+  { x: 94, y: 762, w: 697, h: 698, circle: true },
+  { x: 94, y: 1496, w: 697, h: 698, circle: true },
 ];
 
-const NEMO_HALF = { w: 1054, h: 3000 };
+const NEMO_HALF = { w: 879, h: 2500 };
 const nemoHalfSlots: Slot[] = [
-  { x: 128, y: 76, w: 788, h: 796, circle: true },
-  { x: 128, y: 932, w: 788, h: 796, circle: true },
-  { x: 120, y: 1796, w: 804, h: 804, circle: true },
+  { x: 100, y: 60, w: 671, h: 672, circle: true },
+  { x: 100, y: 774, w: 671, h: 672, circle: true },
+  { x: 100, y: 1497, w: 670, h: 671, circle: true },
 ];
 
-const SEA_HALF = { w: 1326, h: 3750 };
+const SEA_HALF = { w: 886, h: 2500 };
 const seaHalfSlots: Slot[] = [
-  { x: 381, y: 300, w: 681, h: 694, circle: true },
-  { x: 388, y: 1400, w: 663, h: 688, circle: true },
-  { x: 388, y: 2506, w: 688, h: 706, circle: true },
+  { x: 92, y: 54, w: 705, h: 705, circle: true },
+  { x: 92, y: 787, w: 699, h: 699, circle: true },
+  { x: 92, y: 1521, w: 714, h: 714, circle: true },
 ];
 
-const FIH_FULL = { w: 1944, h: 2749 };
+const FIH_FULL = { w: 1768, h: 2500 };
 const fihFullSlots: Slot[] = [
-  { x: 132, y: 96, w: 896, h: 916, circle: true },
-  { x: 1016, y: 548, w: 896, h: 780, circle: true },
-  { x: 80, y: 1144, w: 820, h: 824, circle: true },
-  { x: 1004, y: 1616, w: 840, h: 760, circle: true },
+  { x: 98, y: 78, w: 847, h: 846, circle: true },
+  { x: 886, y: 482, w: 867, h: 867, circle: true },
+  { x: 29, y: 1007, w: 860, h: 859, circle: true },
+  { x: 886, y: 1383, w: 848, h: 849, circle: true },
 ];
 
-const NEMO_FULL = { w: 2121, h: 3000 };
+const NEMO_FULL = { w: 1768, h: 2500 };
 const nemoFullSlots: Slot[] = [
-  { x: 68, y: 368, w: 956, h: 968, circle: true },
-  { x: 1112, y: 368, w: 952, h: 968, circle: true },
-  { x: 68, y: 1404, w: 956, h: 964, circle: true },
-  { x: 1092, y: 1404, w: 956, h: 968, circle: true },
+  { x: 49, y: 300, w: 816, h: 816, circle: true },
+  { x: 918, y: 300, w: 816, h: 816, circle: true },
+  { x: 50, y: 1163, w: 815, h: 816, circle: true },
+  { x: 903, y: 1163, w: 817, h: 816, circle: true },
 ];
 
-const SEA_FULL = { w: 2652, h: 3750 };
+const SEA_FULL = { w: 1768, h: 2500 };
 const seaFullSlots: Slot[] = [
-  { x: 406, y: 313, w: 769, h: 794, circle: true },
-  { x: 1631, y: 838, w: 813, h: 825, circle: true },
-  { x: 388, y: 1631, w: 813, h: 838, circle: true },
-  { x: 1625, y: 2156, w: 788, h: 806, circle: true },
+  { x: 76, y: 39, w: 807, h: 807, circle: true },
+  { x: 887, y: 374, w: 847, h: 849, circle: true },
+  { x: 54, y: 902, w: 852, h: 853, circle: true },
+  { x: 887, y: 1262, w: 818, h: 820, circle: true },
 ];
 
 // Keychain: portrait tag (keyring hole at top) with a circular photo window.
-const KC = { w: 1415, h: 2000 };
-const keychainSlots: Slot[] = [{ x: 297, y: 997, w: 810, h: 797, circle: true }];
+const KC = { w: 1768, h: 2500 };
+const keychainSlots: Slot[] = [{ x: 286, y: 1174, w: 1196, h: 1197, circle: true }];
 
 // ---- the frames ----------------------------------------------------------------
 
