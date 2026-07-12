@@ -246,11 +246,11 @@ function wordmark(
 // Coordinates measured from each PNG's alpha channel (the transparent bubble
 // windows). Sizes vary per design because the artwork isn't a strict grid.
 
-const FIH_HALF = { w: 1058, h: 3000 };
+const FIH_HALF = { w: 1324, h: 3750 };
 const fihHalfSlots: Slot[] = [
-  { x: 116, y: 108, w: 816, h: 780, circle: true },
-  { x: 114, y: 932, w: 826, h: 788, circle: true },
-  { x: 112, y: 1808, w: 836, h: 796, circle: true },
+  { x: 150, y: 144, w: 988, h: 913, circle: true },
+  { x: 163, y: 1256, w: 1031, h: 806, circle: true },
+  { x: 144, y: 2256, w: 1056, h: 994, circle: true },
 ];
 
 const NEMO_HALF = { w: 1054, h: 3000 };
@@ -260,11 +260,11 @@ const nemoHalfSlots: Slot[] = [
   { x: 120, y: 1796, w: 804, h: 804, circle: true },
 ];
 
-const SEA_HALF = { w: 1055, h: 3000 };
+const SEA_HALF = { w: 1326, h: 3750 };
 const seaHalfSlots: Slot[] = [
-  { x: 172, y: 124, w: 708, h: 708, circle: true },
-  { x: 176, y: 1004, w: 704, h: 700, circle: true },
-  { x: 168, y: 1888, w: 716, h: 712, circle: true },
+  { x: 381, y: 300, w: 681, h: 694, circle: true },
+  { x: 388, y: 1400, w: 663, h: 688, circle: true },
+  { x: 388, y: 2506, w: 688, h: 706, circle: true },
 ];
 
 const FIH_FULL = { w: 1944, h: 2749 };
@@ -283,17 +283,17 @@ const nemoFullSlots: Slot[] = [
   { x: 1092, y: 1404, w: 956, h: 968, circle: true },
 ];
 
-const SEA_FULL = { w: 2121, h: 3000 };
+const SEA_FULL = { w: 2652, h: 3750 };
 const seaFullSlots: Slot[] = [
-  { x: 160, y: 108, w: 832, h: 828, circle: true },
-  { x: 1140, y: 548, w: 864, h: 828, circle: true },
-  { x: 148, y: 1160, w: 864, h: 860, circle: true },
-  { x: 1136, y: 1580, w: 844, h: 844, circle: true },
+  { x: 406, y: 313, w: 769, h: 794, circle: true },
+  { x: 1631, y: 838, w: 813, h: 825, circle: true },
+  { x: 388, y: 1631, w: 813, h: 838, circle: true },
+  { x: 1625, y: 2156, w: 788, h: 806, circle: true },
 ];
 
-// Keychain: 900×900 tag with a circular photo window.
-const KC = { w: 900, h: 900 };
-const keychainSlots: Slot[] = [{ x: 170, y: 210, w: 560, h: 560, circle: true }];
+// Keychain: portrait tag (keyring hole at top) with a circular photo window.
+const KC = { w: 1415, h: 2000 };
+const keychainSlots: Slot[] = [{ x: 297, y: 997, w: 810, h: 797, circle: true }];
 
 // ---- the frames ----------------------------------------------------------------
 
@@ -471,6 +471,7 @@ export const FRAMES: Frame[] = [
     height: KC.h,
     slots: keychainSlots,
     sample: "/assets/ui/keychain-sample.svg",
+    overlay: "/assets/Frame PNGs/Keychain.png",
     drawBackground(ctx) {
       ctx.fillStyle = POOL;
       ctx.fillRect(0, 0, KC.w, KC.h);
