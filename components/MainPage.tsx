@@ -45,7 +45,7 @@ export function MainPage() {
         <img
           src="/assets/ui/logo-main.png"
           alt="Fishbowl Studio"
-          className="bob w-[min(72vw,1250px)] object-contain drop-shadow-[0_10px_0_rgba(17,17,17,0.25)]"
+          className="logo-sway w-[min(72vw,1250px)] object-contain drop-shadow-[0_10px_0_rgba(17,17,17,0.25)]"
         />
 
         <span className="btn95 pulse-soft w-[min(46vw,560px)] px-16 py-7 text-center text-[clamp(1.6rem,2.8vw,2.4rem)]">

@@ -284,6 +284,25 @@ body {
   animation: bob 3.2s ease-in-out infinite;
 }
 
+@keyframes logo-sway {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  25% {
+    transform: translateY(-14px) rotate(-3deg) scale(1.03);
+  }
+  50% {
+    transform: translateY(-4px) rotate(0deg) scale(1);
+  }
+  75% {
+    transform: translateY(-16px) rotate(3deg) scale(1.03);
+  }
+}
+.logo-sway {
+  animation: logo-sway 4.2s ease-in-out infinite;
+}
+
 @keyframes pulse-soft {
   0%,
   100% {
